@@ -18,6 +18,14 @@ original_search <- read_csv("literature_lists/ray_ghoti_list_original.csv")
 
 updated_search <- read_csv("literature_lists/shayna_ghoti_list_26Feb2024.csv")
 
+ghoti_sheet <- read_csv("literature_lists/ghoti_lit_review.csv")
+
+
+
+## check that our original search file matches the articles in our ghoti lit search google sheet.
+ghoti_v_original <- anti_join(ghoti_sheet, original_search, by = 'Article Title')
+original_v_ghoti <- anti_join(original_search, ghoti_sheet, by = 'Article Title')
+
 
 ## How many new hits did we get between these 2 searches? -> 48 new hits
 925 - 877
@@ -35,10 +43,57 @@ orig_unique <- extract_unique_references(original_search,
                                          type = "select")
 
 orig_dups_1_list <- review_duplicates(original_search$'Article Title', matches = orig_dups_1)
-print(orig_dups_1_list) # these are the duplicates in our original search based on exact matches of titles
+print(orig_dups_1_list) # these are the duplicates in our original search based on exact matches of titles - 9 duplicates.
 
 
 #### check for duplicates in our original search based on less strict matching...[TO DO]
+
+
+
+
+
+## Ray's way of doing this using anti-join in dplyr
+
+new_records <- anti_join(updated_search,original_search, by = 'Article Title')      # this return 99 records, which is too many.
+
+#check for records in our original search that are NOT in our updated search...
+oddball_records <- anti_join(original_search, updated_search, by = 'Article Title')    # this returns 50 records in our original search, but not in our updated search
+oddball_records_2 <- anti_join(clean_original_search, clean_updated_search, by = "Article_Title")    # also returns 50 records.
+
+# the 50 records returned from our original search mostly seem to be Proceedings Papers...
+oddball_records$`Document Type`
+
+
+## Need to do some cleaning of the bibliographic files to better test for matches...
+### change article titles to all lower case
+### remove punctuation and special characters from article titles
+
+
+clean_original_search <- original_search %>% 
+  mutate(Article_Title = tolower(gsub("[[:punct:]]", " ", original_search$'Article Title'))) %>% 
+  relocate(Article_Title, .before = 13)
+
+clean_updated_search <- updated_search %>% 
+  mutate(Article_Title = tolower(gsub("[[:punct:]]", " ", updated_search$'Article Title'))) %>% 
+  relocate(Article_Title, .before = 13)
+
+clean_new_records <- anti_join(clean_updated_search, clean_original_search, by = "Article_Title")    # huh - this still returns 99 records, which is too many.
+
+
+## checking for duplicates in the above...
+
+clean_dups_1 <- find_duplicates(clean_new_records$Article_Title,
+                               method = "exact",                  #note there are different methods for detecting duplicates, too.
+                               to_lower = TRUE,
+                               rm_punctuation = TRUE)
+
+clean_dups_unique <- extract_unique_references(clean_new_records,
+                                         matches = clean_dups_1,
+                                         type = "select")
+
+clean_dups_1_list <- review_duplicates(clean_new_records$Article_Title, matches = clean_dups_1)
+print(clean_dups_1_list)     # still only detecting 1 duplicate in this set of 99 hits
+
 
 
 
