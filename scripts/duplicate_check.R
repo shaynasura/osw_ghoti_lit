@@ -32,7 +32,6 @@ original_v_ghoti <- anti_join(original_search, ghoti_sheet, by = 'Article Title'
 
 
 ## first checking for duplicates in our original search
-
 orig_dups_1 <- find_duplicates(original_search$`Article Title`,
                              method = "exact",                  #note there are different methods for detecting duplicates, too.
                              to_lower = TRUE,
@@ -45,14 +44,30 @@ orig_unique <- extract_unique_references(original_search,
 orig_dups_1_list <- review_duplicates(original_search$'Article Title', matches = orig_dups_1)
 print(orig_dups_1_list) # these are the duplicates in our original search based on exact matches of titles - 9 duplicates.
 
+original_search[18,12]
 
 #### check for duplicates in our original search based on less strict matching...[TO DO]
 
 
+## second: checking for duplicates in our updated search
+updated_dups_1 <- find_duplicates(updated_search$`Article Title`,
+                               method = "exact",                  #note there are different methods for detecting duplicates, too.
+                               to_lower = TRUE,
+                               rm_punctuation = TRUE)
+
+updated_unique <- extract_unique_references(updated_search,
+                                         matches = updated_dups_1,
+                                         type = "select")
+## 916 updated unique records
+
+updated_dups_1_list <- review_duplicates(updated_search$'Article Title', matches = updated_dups_1)
+print(updated_dups_1_list) # these are the duplicates in our updated search based on exact matches of titles - 9 duplicates.
 
 
 
-## Ray's way of doing this using anti-join in dplyr
+
+
+## Ray's way of comparing our original search list to our update search list using anti-join in dplyr
 
 new_records <- anti_join(updated_search,original_search, by = 'Article Title')      # this return 99 records, which is too many.
 
@@ -63,12 +78,22 @@ oddball_records_2 <- anti_join(clean_original_search, clean_updated_search, by =
 # the 50 records returned from our original search mostly seem to be Proceedings Papers...
 oddball_records$`Document Type`
 
+### Okay, so Ray and I realized that our original search included 'Meetings' records instead of 'Dissertation/Theses' records.
+### Using our search terms and only keeping those records for 'Articles', 'Review Articles', 'Other', and 'Meetings' produced 881 records on February 26, 2024.
+###           This 881 records is MUCH closer to our 877 records from our original search.
+### Using our search terms and only keeping those records for 'Articles', 'Review Articles', 'Other', and 'Dissertation/Theses' produced 925 records on Feb. 26, 2024.
+
+### So to combine and update our literature search lists, we need to remove those articles in our original search that DO NOT show up in our updated search. Then we need to check our list for duplicates, and then append our already screened information to our final, updated list.
+
+
+
+
+
+
 
 ## Need to do some cleaning of the bibliographic files to better test for matches...
 ### change article titles to all lower case
 ### remove punctuation and special characters from article titles
-
-
 clean_original_search <- original_search %>% 
   mutate(Article_Title = tolower(gsub("[[:punct:]]", " ", original_search$'Article Title'))) %>% 
   relocate(Article_Title, .before = 13)
@@ -80,8 +105,8 @@ clean_updated_search <- updated_search %>%
 clean_new_records <- anti_join(clean_updated_search, clean_original_search, by = "Article_Title")    # huh - this still returns 99 records, which is too many.
 
 
-## checking for duplicates in the above...
 
+## checking for duplicates in the above...
 clean_dups_1 <- find_duplicates(clean_new_records$Article_Title,
                                method = "exact",                  #note there are different methods for detecting duplicates, too.
                                to_lower = TRUE,
@@ -101,7 +126,6 @@ print(clean_dups_1_list)     # still only detecting 1 duplicate in this set of 9
 ## these duplicate functions require a single data frame to detect duplicates within. Need to combine 2 dataframes.
 
 both_searches <- rbind(original_search, updated_search)
-
 
 both_dups_1 <- find_duplicates(both_searches$`Article Title`,
                         method = "string_osa",
