@@ -1,2 +1,2 @@
 # osw_ghoti_lit
-For the offshore wind team Ghoti article
+For the offshore wind team Ghoti article and lit review.
